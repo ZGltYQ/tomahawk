@@ -1,6 +1,6 @@
 # Usage:
 ```
-    node index.js -h | --help
+    node index.js -h  | --help
     node index.js [-u | --url <url>] [-t | --threads <threads>]
     node index.js [-f | --file <filepath>] [-t | --threads <threads>]
 ```
