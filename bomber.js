@@ -1,4 +1,3 @@
-const tor =             require('tor-request');
 const request =         require('request');
 const randomUseragent = require('random-useragent');
 const {
@@ -22,7 +21,7 @@ function sendRequestWithoutProxy(url) {
 
 setInterval(() => {
     urls.forEach(url => {
-        tor.request({
+        request({
             url,
             method: 'GET',
             headers: {
