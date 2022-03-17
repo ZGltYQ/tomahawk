@@ -7,16 +7,17 @@ const { Worker } =      require('worker_threads');
 const state = {};
 
 const doc = `Usage:
-    ./index.js -h | --help
-    ./index.js [-u | --url <url>] [-t | --threads <threads>]
-    ./index.js [-f | --file <filepath>] [-t | --threads <threads>]
+    ./index.js -h  | --help
+    ./index.js (-u | --url <url>) [-t | --threads <threads>] [ --tor ]
+    ./index.js (-f | --file <filepath>) [-t | --threads <threads>] [ --tor ]
      
 
 Options:
     -h --help          Show this screen
-    -t --threads       count of threads
-    -u --url           url to use
-    -f --file          path to file with urls
+    -t --threads       Count of threads
+    --tor              Enable tor proxy
+    -u --url           Url to use
+    -f --file          Path to file with urls
 `;
 
 
@@ -38,13 +39,13 @@ async function parseFile(filepath){
     return data;
 }
 
-function startBombarding(urls, threads){
+function startBombarding({urls, threads, tor}){
     try {
-        if (!threads) new Worker(`${__dirname}/bomber.js`, { workerData: { urls } }).on('message', setState);
+        if (!threads) new Worker(`${__dirname}/bomber.js`, { workerData: { urls, tor } }).on('message', setState);
 
         for (let i = 0; i < threads; i++) {
             new Worker(`${__dirname}/bomber.js`, {
-                workerData: { urls }
+                workerData: { urls, tor }
             }).on('message', setState);
         }
 
@@ -58,8 +59,8 @@ function startBombarding(urls, threads){
     const {
         '<threads>'   : threads,
         '<url>'       : url,
+        '--tor'       : tor,
         '<filepath>'  : filepath
-
     } = docopt(doc);
     
     let urls;
@@ -67,9 +68,5 @@ function startBombarding(urls, threads){
     if (filepath) urls = await parseFile(filepath);
     if (url) urls = [ url ];
 
-    startBombarding(urls, threads)
+    startBombarding({ urls, threads, tor })
 })();
-
-
-
-
