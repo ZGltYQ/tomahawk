@@ -11,7 +11,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "cheerio": "^1.0.0-rc.11",
     "docopt": "^0.6.2",
+    "needle": "^3.1.0",
+    "proxy-check": "^1.0.8",
     "random-useragent": "^0.5.0",
     "request": "^2.88.2",
     "tor-request": "^3.1.0"
