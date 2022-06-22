@@ -1,23 +1,15 @@
 const proxyCheck = require('proxy-check');
+const { PROXY_SITES } = require('./config');
 const needle = require('needle');
 const cheerio = require('cheerio');
 const fs = require('fs').promises;
 
 (async () => {
-    const proxySites = [
-        'https://hidemy.name/ru/proxy-list/?start=1&end=10000#list',
-        'https://geonode.com/free-proxy-list/',
-        'https://www.freeproxylists.net/ru/',
-        'https://free-proxy-list.net/',
-        'http://free-proxy.cz/ru/',
-        'https://www.proxynova.com/proxy-server-list/'
-    ];
-    
-    const proxyList = new Set((await fs.readFile('proxy.txt', 'utf8')).split('\n'));
-    
     setInterval(async () => {
+        const proxyList = new Set((await fs.readFile('proxy.txt', 'utf8')).split('\n'));
+        
         try {
-            for (const url of proxySites) {
+            for (const url of PROXY_SITES) {
                 const response = await needle('get', url);
                 const $ = cheerio.load(response.body);
         
@@ -39,6 +31,8 @@ const fs = require('fs').promises;
     }, 30000);
     
     setInterval(async () => {
+        const proxyList = new Set((await fs.readFile('proxy.txt', 'utf8')).split('\n'));
+        
         for (const proxy of proxyList) {
             try {
                 const [ host, port ] = proxy.split(':');

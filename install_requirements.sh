@@ -4,3 +4,4 @@ chmod 777 nodesource_setup.sh
 sudo ./nodesource_setup.sh
 sudo apt install nodejs
 npm install
+sudo npm i -f pm2

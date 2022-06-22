@@ -5,7 +5,7 @@ const {
 const URL = require("url");
 const tls = require("tls");
 const net = require("net");
-const { urls, sockets } = workerData;
+const { urls, sockets, proxyList } = workerData;
 
 
 // const parsedUrl = URL.parse(program.args[0]);
