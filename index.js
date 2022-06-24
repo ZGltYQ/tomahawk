@@ -70,12 +70,5 @@ async function startBombarding({ urls, overdose, mode, sockets = 0 }){
     if (filepath) urls = await parseFile(filepath);
     if (url) urls = [ url ];
 
-    urls.forEach(url => {
-        if (!url.includes('http://') && !url.includes('https://')) {
-            console.log("The URL is not valid, please follow the formats: \n http://example.com \n http://192.134.63.13")
-            process.exit(1);
-        }
-    });
-
     startBombarding({ urls, overdose, mode, sockets })
 })();
