@@ -11,6 +11,7 @@ module.exports = async ({ urls, overdose, setState }) => {
             const params = {
                 url,
                 method: 'GET',
+                timeout: 500,
                 headers: {
                     'User-Agent': randomUseragent.getRandom()
                 }
@@ -55,10 +56,6 @@ module.exports = async ({ urls, overdose, setState }) => {
                         if (res?.statusCode && res?.statusCode < 400) setState({ url, success: 'successfully' });
                         resolve();
                     });
-                    setTimeout(() => {
-                        setState({ url, success: 'unsuccessfully' });
-                        resolve();
-                    }, 500);
                 })
             } catch(err) {
                 return setState({ url, success: 'unsuccessfully' });
