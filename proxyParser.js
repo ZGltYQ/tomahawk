@@ -46,5 +46,5 @@ const fs = require('fs').promises;
         await fs.writeFile('proxy.txt', Array.from(proxyList).join('\n'));
     
     }, 60000)
-})()
+})();
 

@@ -3,12 +3,13 @@ FROM node:16-alpine
 WORKDIR /app
 
 COPY package*.json ./
-COPY bomber.js ./
+COPY spammer.js ./
+COPY proxyParser.js ./
 COPY index.js ./
+COPY config.js ./
 
-ENV NODE_OPTIONS="--max-old-space-size=4096"
-
-RUN npm install
+RUN npm ci
+RUN touch proxy.txt
 
 ENTRYPOINT [ "npm", "start", "--" ]
 
