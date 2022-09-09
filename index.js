@@ -38,7 +38,14 @@ async function parseFile(filepath){
     if (filepath) urls = await parseFile(filepath);
     if (url) urls = [ url ];
 
-    if (useProxy) execFile('node', [ 'proxyParser.js' ]);
+    let parserProcess = void 0;
+
+    if (useProxy) parserProcess = execFile('node', [ 'proxyParser.js' ]);
+
+    process.on('SIGINT', () => {
+        parserProcess.kill('SIGKILL');
+        process.exit();
+    });
 
     process.on('uncaughtException', () => {
         return;

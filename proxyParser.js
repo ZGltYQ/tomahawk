@@ -7,10 +7,11 @@ const fs = require('fs').promises;
 (async () => {
     setInterval(async () => {
         const proxyList = new Set((await fs.readFile('proxy.txt', 'utf8')).split('\n'));
+        const proxyForNeedle = proxyList[Math.floor(Math.random() * (proxyList?.length - 1))];
         
         try {
             for (const url of PROXY_SITES) {
-                const response = await needle('get', url);
+                const response = proxyForNeedle ? await needle('get', url, { proxy: `http://${proxyForNeedle}` }) : await needle('get', url);
                 const $ = cheerio.load(response.body);
         
                 $('tr').each(async (i, line) => {
