@@ -1,35 +1,39 @@
 const proxyCheck = require('proxy-check');
 const { PROXY_SITES } = require('./config');
-const needle = require('needle');
-const cheerio = require('cheerio');
+const ProxyScenarios  = require('./proxyScenarios');
 const fs = require('fs').promises;
 
-(async () => {
-    setInterval(async () => {
-        const proxyList = new Set((await fs.readFile('proxy.txt', 'utf8')).split('\n'));
-        const proxyForNeedle = proxyList[Math.floor(Math.random() * (proxyList?.length - 1))];
-        
-        try {
-            for (const url of PROXY_SITES) {
-                const response = proxyForNeedle ? await needle('get', url, { proxy: `http://${proxyForNeedle}` }) : await needle('get', url);
-                const $ = cheerio.load(response.body);
-        
-                $('tr').each(async (i, line) => {
-                    const host = $(line).children().eq(0).text();
-                    const port = $(line).children().eq(1).text();
-                    const proxy = `${host}:${port}`;
-        
-                    try {
-                        const proxyStatus = await proxyCheck({ host, port });
-        
-                        if (proxyStatus === true && !proxyList.has(proxy)) {
-                            await fs.appendFile('proxy.txt', `${proxy}\n`)
-                        }
-                    } catch(err) {}
-                });
+const scenarioRunner = new ProxyScenarios();
+
+async function startParsing() {
+    const proxyList = new Set((await fs.readFile('proxy.txt', 'utf8')).split('\n'));
+    const randomProxy = proxyList[Math.floor(Math.random() * (proxyList?.length - 1))];
+
+    try {
+        for (const scenario of PROXY_SITES) {
+            const proxies = await scenarioRunner.runScenario(scenario, randomProxy);
+
+            for (const ip of proxies) {
+                try {
+                    const [ host, port ] = ip.split(':');
+
+                    const status = await proxyCheck({ host, port });
+
+                    if (status === true && !proxyList.has(ip)) {
+                        await fs.appendFile('proxy.txt', `${ip}\n`)
+                    }
+                } catch(err) {}
             }
-        } catch(err) {}
-    }, 30000);
+        }
+    } catch(err) {}
+}
+
+(async () => {
+    await startParsing();
+
+    setInterval(async () => {
+        await startParsing();
+    }, 120000);
     
     setInterval(async () => {
         const proxyList = new Set((await fs.readFile('proxy.txt', 'utf8')).split('\n'));

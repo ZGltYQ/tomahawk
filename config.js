@@ -1,5 +1,6 @@
 module.exports = {
     PROXY_SITES: [
+        'https://openproxy.space/list/http',
         'https://hidemy.name/ru/proxy-list/?start=1&end=10000#list',
         'https://geonode.com/free-proxy-list/',
         'https://www.freeproxylists.net/ru/',

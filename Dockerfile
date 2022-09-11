@@ -5,6 +5,7 @@ WORKDIR /app
 COPY package*.json ./
 COPY spammer.js ./
 COPY proxyParser.js ./
+COPY proxyScenarios ./
 COPY index.js ./
 COPY config.js ./
 
