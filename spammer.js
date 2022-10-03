@@ -58,8 +58,7 @@ module.exports = async ({ urls, useProxy, timeout = 0 }) => {
         setInterval(() => {
             urls.forEach(url => {
                 try {
-                    // return request(getParams(url), () => {});
-                    console.log({url})
+                    return request(getParams(url), () => {});
                 } catch(err) {
                     return;
                 }
